@@ -1,0 +1,366 @@
+import { useState, useEffect, useRef } from "react";
+
+// ─── DATA & CONSTANTS ────────────────────────────────────────────────────────
+const GODS = [
+  {
+    id: "zeus", name: "Zeus", domain: "Willenskraft & Führung", color: "#C9A84C", bg: "#1A1508",
+    task: "Triff heute eine wichtige Entscheidung bewusst und meditiere 10 Minuten.", symbol: "⚡", skillTree: "disziplin",
+    punishmentMsg: (h) => `${h}h Unterhaltung? Zeus donnert: „Ein König beherrscht sich selbst, bevor er andere führt.“`,
+    warningMsg: "Zeus beobachtet dich. Nutze die Zeit weise.",
+    prophecies: [
+      "Ein Sturm zieht auf. Heute wird deine Entschlossenheit wie Blitze einschlagen.",
+      "Die Adler fliegen tief. Achte auf die Zeichen der Macht in deinem Alltag.",
+      "Wer den Thron beansprucht, muss zuerst dem Chaos im eigenen Kopf standhalten."
+    ]
+  },
+  {
+    id: "athena", name: "Athena", domain: "Lernen & Strategie", color: "#7B9EA8", bg: "#080F11",
+    task: "Lerne 1 Stunde etwas Neues oder lies konzentriert.", symbol: "🦉", skillTree: "geist",
+    punishmentMsg: (h) => `${h}h Bildschirmzeit. Athena seufzt: „Weisheit wächst durch Übung, nicht durch Konsum.“`,
+    warningMsg: "Athena erwartet heute deinen schärfsten Verstand.",
+    prophecies: [
+      "Das schärfste Schwert ist ein ruhiger Verstand. Handle heute nicht impulsiv.",
+      "Ein Problem wird auftauchen. Die Lösung liegt in der Strategie, nicht in der Wut.",
+      "Eulen rufen in der Nacht. Suche heute das Wissen im Verborgenen."
+    ]
+  },
+  {
+    id: "aphrodite", name: "Aphrodite", domain: "Ästhetik & Beziehungen", color: "#C47A8A", bg: "#120809",
+    task: "Vollständige Skincare-Routine + schreibe jemandem eine aufrichtige Nachricht.", symbol: "🪞", skillTree: "geist",
+    punishmentMsg: (h) => `${h}h vor dem Bildschirm. Aphrodite flüstert: „Schönheit entsteht im Leben, nicht im Scrollen.“`,
+    warningMsg: "Aphrodite lächelt heute – zählt echte Verbindung.",
+    prophecies: [
+      "Wahre Ästhetik beginnt im Inneren. Pflege heute dich und deine Nächsten.",
+      "Ein unerwartetes Lächeln wird dir Türen öffnen. Sei offen dafür.",
+      "Liebe das Detail. Heute wirst du Schönheit in Dingen finden, die du sonst übersiehst."
+    ]
+  },
+  {
+    id: "apollo", name: "Apollo", domain: "Kreativität & Gesundheit", color: "#D4A843", bg: "#130F00",
+    task: "Arbeite 1 Stunde kreativ – Musik, Zeichnen, Schreiben. Produziere etwas.", symbol: "☀️", skillTree: "kreativitaet",
+    punishmentMsg: (h) => `${h}h konsumiert. Apollo mahnt: „Die Muse belohnt den Schaffenden, nicht den Zuschauer.“`,
+    warningMsg: "Apollo ruft - heute ist ein Tag für Schöpfung.",
+    prophecies: [
+      "Die Sonne vertreibt die Schatten der Zweifel. Bringe Licht in deine Projekte.",
+      "Ein Rhythmus liegt in der Luft. Lass die Kunst heute durch dich fließen.",
+      "Heilung und Schöpfung sind eins. Erschaffe heute etwas, das Bestand hat."
+    ]
+  },
+  {
+    id: "ares", name: "Ares", domain: "Disziplin & Sport", color: "#C44A3A", bg: "#130503",
+    task: "45 Minuten intensives Training. Kein Kompromiss.", symbol: "⚔️", skillTree: "koerper",
+    punishmentMsg: (h) => `${h}h faul. Ares ist wütend: „Ein Krieger schont sich nicht. Das war Schwäche.“`,
+    warningMsg: "Ares fordert dich heute heraus. Zeig ihm was du hast.",
+    prophecies: [
+      "Schmerz vergeht, Stolz bleibt. Heute ist ein Tag für den Kampf.",
+      "Nur durch Widerstand wächst der Muskel. Suche heute den schweren Weg.",
+      "Das Blut kocht. Kanalisiere deine Aggression in unaufhaltsamen Fortschritt."
+    ]
+  },
+  {
+    id: "hermes", name: "Hermes", domain: "Produktivität & Tempo", color: "#7AAC7A", bg: "#071007",
+    task: "Erledige heute eine Aufgabe, die du aufgeschoben hast. Jetzt.", symbol: "🪽", skillTree: "disziplin",
+    punishmentMsg: (h) => `${h}h verschwendet. Hermes zuckt die Schultern: „Selbst ich ruhe mich nicht so lange aus.“`,
+    warningMsg: "Hermes hat keine Zeit zu verlieren – du auch nicht.",
+    prophecies: [
+      "Der Wind trägt Neuigkeiten. Heute musst du schnell und wendig agieren.",
+      "Zögere nicht. Die erste Intuition wird heute dein bester Bote sein.",
+      "Ein unerledigtes Geschäft blockiert deinen Weg. Räume es heute aus dem Weg."
+    ]
+  },
+  {
+    id: "poseidon", name: "Poseidon", domain: "Emotionen & Intuition", color: "#3A7AC4", bg: "#030A13",
+    task: "Schreibe einen ehrlichen Journaleintrag. Was bewegt dich gerade wirklich?", symbol: "🌊", skillTree: "geist",
+    punishmentMsg: (h) => `${h}h Ablenkung. Poseidon rauscht: „Tiefe findest du nicht im Lärm.“`,
+    warningMsg: "Poseidon zeigt dir heute deine eigene Tiefe.",
+    prophecies: [
+      "Gefühle sind wie Gezeiten. Kämpfe nicht gegen sie an, lerne auf ihnen zu surfen.",
+      "Unter der unruhigen Oberfläche liegt absolute Stille. Tauche heute tiefer.",
+      "Ein Sturm der Emotionen reinigt die Küste. Lass zu, was gefühlt werden muss."
+    ]
+  },
+  {
+    id: "hephaistos", name: "Hephaistos", domain: "Handwerk & Projekte", color: "#C47A30", bg: "#120800",
+    task: "Arbeite 1 Stunde fokussiert an einem konkreten Projekt (Ziele, Weiterbildung).", symbol: "🔨", skillTree: "kreativitaet",
+    punishmentMsg: (h) => `${h}h. Hephaistos legt den Hammer hin: „Meisterschaft entsteht in der Werkstatt.“`,
+    warningMsg: "Hephaistos schmiedet heute mit dir. Fokus ist alles.",
+    prophecies: [
+      "Der Amboss wartet. Große Dinge erfordern stetige, harte Schläge.",
+      "Hitze formt den Stahl. Scheue heute nicht die Reibung der harten Arbeit.",
+      "Dein Handwerk ist dein Vermächtnis. Setze heute einen massiven Grundstein."
+    ]
+  },
+  {
+    id: "artemis", name: "Artemis", domain: "Natur & Fokus", color: "#5A9A6A", bg: "#050F07",
+    task: "30 Minuten draußen bewegen. Handy bleibt zu Hause.", symbol: "🏹", skillTree: "koerper",
+    punishmentMsg: (h) => `${h}h drinnen gefangen. Artemis murmelt: „Der Wald wartet. Morgen raus ohne Ausrede.“`,
+    warningMsg: "Artemis führt dich heute hinaus. Folge ihr.",
+    prophecies: [
+      "Die Jägerin verfehlt ihr Ziel nie. Richte deinen Blick starr auf das Wesentliche.",
+      "Die Natur heilt, was die Stadt zerstört. Atme heute den Wind ein.",
+      "Folge der Fährte. Deine Intuition in der Stille wird dir den Weg zeigen."
+    ]
+  },
+  {
+    id: "demeter", name: "Demeter", domain: "Körperpflege & Rhythmus", color: "#8A9A4A", bg: "#090A03",
+    task: "Bewusst essen, 2L Wasser trinken, vor 23 Uhr schlafen.", symbol: "🌾", skillTree: "koerper",
+    punishmentMsg: (h) => `${h}h Bildschirm. Demeter schüttelt den Kopf: „Dein Körper ist dein Tempel.“`,
+    warningMsg: "Demeter erinnert dich: heute deinen Körper nähren.",
+    prophecies: [
+      "Was du heute säst, wirst du morgen ernten. Pflege deinen Organismus.",
+      "Die Jahreszeiten lassen sich nicht zwingen. Finde heute deinen natürlichen Rhythmus.",
+      "Nahrung ist Energie. Wähle heute ganz bewusst, was du aufnimmst."
+    ]
+  },
+  {
+    id: "dionysos", name: "Dionysos", domain: "Freude & Soziales", color: "#8A4AC4", bg: "#0A0313",
+    task: "Triff oder ruf Freunde an. Echter Kontakt, kein Social Media.", symbol: "🍇", skillTree: "geist",
+    punishmentMsg: (h) => `${h}h passiver Konsum. Dionysos grinst schief: „Selbst ich kenne Maß und Ziel.“`,
+    warningMsg: "Dionysos lädt ein – heute echte Lebensfreude.",
+    prophecies: [
+      "Das Leben ist ein Fest für die Lebenden. Feiere heute eine kleine Sache.",
+      "Geteilte Freude ist doppelte Freude. Mache heute jemanden zum Lachen.",
+      "Verliere dich einen Moment im Chaos, um dich danach neu zu finden."
+    ]
+  },
+  {
+    id: "hera", name: "Hera", domain: "Struktur & Commitments", color: "#9A6AAA", bg: "#0D0812",
+    task: "Review deine Ziele. Halte heute ein Commitment strikt ein, das du dir gegeben hast.", symbol: "🦚", skillTree: "disziplin",
+    punishmentMsg: (h) => `${h}h unkontrolliert. Hera urteilt kalt: „Würde erfordert Selbstbeherrschung.“`,
+    warningMsg: "Hera beobachtet – Struktur ist heute Stärke.",
+    prophecies: [
+      "Loyalität zu dir selbst ist die höchste Tugend. Halte heute dein Wort.",
+      "Ein wackeliges Fundament stürzt ein. Festige heute deine Strukturen.",
+      "Königliche Würde entsteht durch Ordnung. Räume heute dein Leben auf."
+    ]
+  }
+];
+
+const LEVEL_THRESHOLDS = [0, 300, 700, 1300, 2100, 3200, 4600, 6400, 8700, 11600, 15200, 19700, 25300, 32200, 40600, 50700, 62800, 77200, 93900, 113000];
+const TITLES = ["Sterblicher", "Erwachter", "Geweihter", "Auserwählter", "Gefährte der Götter", "Halbgott", "Held", "Legendärer Held", "Unsterblicher", "Olympischer Unsterblicher"];
+
+const MORNING_ROUTINE = [
+  { id: "water", label: "Glas Wasser trinken", icon: "💧", xp: 5 },
+  { id: "meditate", label: "5 Min meditieren", icon: "🧘‍♂️", xp: 15, hasTimer: true, timerSeconds: 300 },
+  { id: "pullups", label: "Körperliche Aktivität", icon: "💪", xp: 10, hasTimer: true, timerSeconds: 120 },
+  { id: "plan", label: "Tagesplan machen", icon: "📝", xp: 5 },
+];
+
+const WEEKLY_QUESTS = [
+  { id: "w_sport", label: "3x Sport diese Woche", icon: "⚔️", xp: 200, tree: "koerper", check: (days, wk) => wk.filter(d => days[d]?.taskDone && GODS[days[d]?.godIndex]?.id === "ares").length >= 3 },
+  { id: "w_read", label: "3x Lern-Tag diese Woche", icon: "🦉", xp: 180, tree: "geist", check: (days, wk) => wk.filter(d => days[d]?.taskDone && GODS[days[d]?.godIndex]?.id === "athena").length >= 3 },
+  { id: "w_routine", label: "7x Morgenroutine komplett", icon: "🌅", xp: 250, tree: "disziplin", check: (days, wk) => wk.filter(d => days[d]?.routineBonusClaimed).length >= 7 },
+];
+
+const ACHIEVEMENTS = [
+  { id: "first_day", label: "Erster Schritt", desc: "Ersten Tag geloggt", icon: "👣", xp: 50, check: (p, days) => Object.keys(days).length >= 1 },
+  { id: "streak_7", label: "Eine Woche", desc: "7-Tage-Streak", icon: "🔥", xp: 150, check: (p) => p.streak >= 7 },
+  { id: "streak_30", label: "Ein Monat", desc: "30-Tage-Streak", icon: "💫", xp: 500, check: (p) => p.streak >= 30 },
+  { id: "all_gods", label: "Alle Götter erlebt", desc: "Jeden der 12 Götter kennengelernt", icon: "🏛️", xp: 300, check: (p) => Object.keys(p.godHistory || {}).length >= 12 },
+];
+
+const MORTAL_TRIALS = [
+  { id: "spartan", label: "Spartanische Woche", desc: "7 Tage kalt duschen, kein Zucker.", xp: 1000 },
+  { id: "silence", label: "Schweigepflicht", desc: "24h ohne Social Media und YouTube.", xp: 500 },
+  { id: "odyssey", label: "Odyssee", desc: "Ein 300+ Seiten Buch in 14 Tagen lesen.", xp: 1500 }
+];
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────
+const todayKey = () => new Date().toISOString().split("T")[0];
+
+function getLevel(xp) {
+  let l = 1;
+  for (let i = 1; i < LEVEL_THRESHOLDS.length; i++) {
+    if (xp >= LEVEL_THRESHOLDS[i]) l = i + 1; else break;
+  }
+  return Math.min(l, 50);
+}
+
+function getXPForNextLevel(xp) {
+  const l = getLevel(xp);
+  if (l >= 50) return { current: xp, needed: xp, percent: 100 };
+  const cur = xp - LEVEL_THRESHOLDS[l - 1];
+  const ned = LEVEL_THRESHOLDS[l] - LEVEL_THRESHOLDS[l - 1];
+  return { current: cur, needed: ned, percent: Math.floor((cur / ned) * 100) };
+}
+
+function loadData(key, def) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; } }
+function saveData(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch { } }
+
+function getWeekDays() {
+  const now = new Date();
+  const dow = now.getDay() || 7;
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now); d.setDate(now.getDate() - dow + 1 + i);
+    return d.toISOString().split("T")[0];
+  });
+}
+
+// ─── MAIN APP ────────────────────────────────────────────────────────────
+export default function OlympusOS() {
+  const [tab, setTab] = useState("heute");
+  const [profile, setProfile] = useState(() => loadData("oos_profile", {
+    name: "Held", xp: 0, koerper: 0, geist: 0, kreativitaet: 0, disziplin: 0,
+    streak: 0, lastActive: null, graceTokens: 0, totalDays: 0,
+    godHistory: {}, achievements: [], weeklyQuestsClaimed: {}, manualAchievements: [], godPool: []
+  }));
+  const [days, setDays] = useState(() => loadData("oos_days", {}));
+  const [finance, setFinance] = useState(() => loadData("oos_finance", { entries: {} }));
+  const [calDate, setCalDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [notification, setNotification] = useState(null);
+
+  const today = todayKey();
+  const todayData = days[today] || {};
+  const godIndex = todayData.godIndex ?? null;
+  const todayGod = godIndex !== null ? GODS[godIndex] : GODS[0];
+
+  useEffect(() => { saveData("oos_profile", profile); }, [profile]);
+  useEffect(() => { saveData("oos_days", days); }, [days]);
+  useEffect(() => { saveData("oos_finance", finance); }, [finance]);
+
+  // Daily god roll (Pity System) + Streak (Grace Tokens)
+  useEffect(() => {
+    if (!days[today] || days[today].godIndex === undefined) {
+      
+      // 1. Pity System - Götter Pool laden oder mischen
+      let pool = profile.godPool && profile.godPool.length > 0 ? [...profile.godPool] : [];
+      if (pool.length === 0) {
+        pool = Array.from({ length: GODS.length }, (_, i) => i);
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+      }
+      const nextGodIdx = pool.pop();
+      const godObj = GODS[nextGodIdx];
+      const randomProphecy = godObj.prophecies[Math.floor(Math.random() * godObj.prophecies.length)];
+
+      setDays(d => ({
+        ...d, [today]: {
+          ...(d[today] || {}), godIndex: nextGodIdx, prophecy: randomProphecy,
+          routine: {}, taskDone: false, eveningDone: false, stars: 0, note: "", screenTime: 0, events: []
+        }
+      }));
+
+      // 2. Streak Logik inkl. Gnadentoken
+      setProfile(p => {
+        const last = p.lastActive;
+        const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+        const yKey = yesterday.toISOString().split("T")[0];
+        
+        let newStreak = p.streak || 0;
+        let tokens = p.graceTokens || 0;
+
+        if (last === yKey) {
+          newStreak += 1;
+        } else if (last && last !== today) {
+          // Tag verpasst! Gnadentoken prüfen
+          if (tokens > 0) {
+            tokens -= 1;
+            newStreak += 1; // Streak bleibt am Leben!
+            setTimeout(() => notify("🪶 Gnadentoken geopfert! Deine Streak wurde gerettet.", "#9A6AAA"), 1500);
+          } else {
+            newStreak = 1; // Streak gerissen
+            setTimeout(() => notify("💀 Deine Streak ist gerissen. Der Aufstieg beginnt von vorn.", "#C44A3A"), 1500);
+          }
+        } else if (!last) {
+          newStreak = 1;
+        }
+
+        if (newStreak >= 30) tokens = Math.max(tokens, 2);
+        else if (newStreak >= 14) tokens = Math.max(tokens, 1);
+
+        return { ...p, streak: newStreak, lastActive: today, totalDays: p.totalDays + 1, graceTokens: tokens, godPool: pool };
+      });
+    }
+  }, [today]);
+
+  // Achievements fix: Sicherer Loop
+  useEffect(() => {
+    let newXp = 0;
+    let newIds = [];
+    ACHIEVEMENTS.forEach(a => {
+      if (!profile.achievements?.includes(a.id) && a.check(profile, days)) {
+        newXp += a.xp;
+        newIds.push(a.id);
+        setTimeout(() => notify(`🏆 Achievement: ${a.label} +${a.xp} XP`, "#C9A84C"), newIds.length * 500);
+      }
+    });
+
+    if (newIds.length > 0) {
+      setProfile(p => ({
+        ...p, achievements: [...(p.achievements || []), ...newIds], xp: p.xp + newXp
+      }));
+    }
+  }, [profile.xp, profile.streak, days]);
+
+  function notify(msg, color = "#C9A84C") {
+    setNotification({ msg, color, id: Date.now() });
+    setTimeout(() => setNotification(null), 4000);
+  }
+
+  function addXP(amount, tree) {
+    setProfile(p => {
+      const streakMult = p.streak >= 7 ? Math.min(1.5, 1 + Math.floor(p.streak / 7) * 0.1) : 1;
+      const godBonus = (days[today]?.taskDone && todayGod?.skillTree === tree) ? 1.5 : 1;
+      const earned = Math.round(amount * streakMult * godBonus);
+      return {
+        ...p, xp: p.xp + earned, [tree]: (p[tree] || 0) + earned,
+        godHistory: { ...p.godHistory, [todayGod?.id]: (p.godHistory?.[todayGod?.id] || 0) + earned },
+      };
+    });
+  }
+
+  function toggleRoutine(itemId, item) {
+    const current = days[today]?.routine || {};
+    if (current[itemId]) return;
+    setDays(d => ({ ...d, [today]: { ...d[today], routine: { ...current, [itemId]: true } } }));
+    addXP(item.xp, "disziplin");
+    notify(`+${item.xp} XP — ${item.label}`, "#7AAC7A");
+  }
+
+  const level = getLevel(profile.xp);
+  const xpInfo = getXPForNextLevel(profile.xp);
+  const title = TITLES[Math.min(Math.floor(level/5), TITLES.length - 1)];
+  const dominantGodId = Object.entries(profile.godHistory || {}).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const patronGod = GODS.find(g => g.id === dominantGodId);
+
+  // Compute Real Balance
+  const allEntries = Object.values(finance.entries || {}).flatMap(d => d || []);
+  const totalIn = allEntries.filter(e => e.type === "income").reduce((s, e) => s + e.amount, 0);
+  const totalOut = allEntries.filter(e => e.type === "expense").reduce((s, e) => s + e.amount, 0);
+  const realBalance = totalIn - totalOut;
+
+  return (
+    <div style={{ fontFamily: "'Inter', sans-serif", background: "#0C0C0E", minHeight: "100vh", color: "#E8E4DC", maxWidth: 430, margin: "0 auto", position: "relative", paddingBottom: 80 }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;600;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::-webkit-scrollbar { width: 0; }
+        button, input, textarea { font-family: 'Inter', sans-serif; }
+        .tab-btn:active { transform: scale(0.95); }
+        .check-item:active { transform: scale(0.98); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-up { animation: slideUp 0.3s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .fade-in { animation: fadeIn 0.35s ease forwards; }
+      `}</style>
+
+      {notification && (
+        <div key={notification.id} style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", background: notification.color, color: "#000", padding: "10px 20px", borderRadius: 20, fontWeight: 600, fontSize: 13, zIndex: 999, whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}>
+          {notification.msg}
+        </div>
+      )}
+
+      <div style={{ paddingBottom: 20 }}>
+        {tab === "heute" && <HeuteTab days={days} setDays={setDays} today={today} todayGod={todayGod} profile={profile} addXP={addXP} toggleRoutine={toggleRoutine} notify={notify} finance={finance} setFinance={setFinance} realBalance={realBalance} />}
+        {tab === "kalender" && <KalendarTab days={days} setDays={setDays} finance={finance} setFinance={setFinance} calDate={calDate} setCalDate={setCalDate} selectedDay={selectedDay} setSelectedDay={setSelectedDay} notify={notify} todayGod={todayGod} />}
+        {tab === "finanzen" && <FinanzenTab finance={finance} setFinance={setFinance} notify={notify} realBalance={realBalance} todayGod={todayGod} />}
+        {tab === "quests" && <QuestsTab profile={profile} setProfile={setProfile} days={days} addXP={addXP} notify={notify} />}
+        {tab === "stats" && <StatsTab profile={profile} days={days} finance={finance} level={level} xpInfo={xpInfo} title={title} patronGod={patronGod} todayGod={todayGod} setProfile={setProfile} setDays={setDays} setFinance={setFinance} notify={notify} />}
+      </div>
+
+      <nav style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: "#111114", borderTop: "1px solid #2A2A30", display: "flex", padding: "8px 0 24px" }}>
+        {[
+          { id: "heute", icon: "⚡", label: "
